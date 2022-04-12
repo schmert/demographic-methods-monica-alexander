@@ -2,15 +2,20 @@ library(tidyverse)
 library(here)
 library(patchwork)
 
-#df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
-#               , skip = 16)
+df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
+               , skip = 16)
 
-df <- read_csv(here("data", "WPP2017_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
-               , skip = 12)
+#df <- read_csv(here("data", "WPP2017_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
+#               , skip = 12)
+
+# objective output is a tibble with columns
+# region, period, year, age, Fx
 
 df <- df %>% 
   rename(region = `Region, subregion, country or area *`, period = Period) %>% 
-  select(-Index, -Variant, -Notes, -`Country code`) %>% 
+  select(-Index, -Variant, -Notes, -`Country code`,-`Parent code`, -Type) %>% 
+  rename('15'='15-19', '20'='20-24', '25'='25-29', '30'='30-34',
+         '35'='35-39', '40'='40-44', '45'='45-49') %>% 
   mutate(year = as.numeric(substr(period, 1, 4))) %>% 
   gather(age, Fx, -region, -period, -year) %>% 
   mutate(age = as.numeric(age), Fx = Fx/1000)
