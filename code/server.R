@@ -1,7 +1,12 @@
 library(tidyverse)
 library(here)
 library(patchwork)
-df <- read_csv(here("data", "WPP2017_FERT_F07_AGE_SPECIFIC_FERTILITY.csv"), skip = 12)
+
+#df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
+#               , skip = 16)
+
+df <- read_csv(here("data", "WPP2017_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
+               , skip = 12)
 
 df <- df %>% 
   rename(region = `Region, subregion, country or area *`, period = Period) %>% 
