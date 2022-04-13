@@ -24,6 +24,10 @@ df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
 # objective output is a tibble with columns
 # region, period, year, age, Lx (w/ radix=1)
 
+# modified Monica's code so that the [0,1) and [1,5) groups
+# are combined immediately in the dl dataset, rather than being
+# calculated later on the fly
+
 age_crosswalk = tibble(
   age  = c(0,1,seq(5,100,5)),
   age5 = 5*floor(age/5) 
@@ -44,25 +48,28 @@ dl <- read_csv(here("data", "WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv")
 
 # read female population file ----
 d_female <- read_csv(here("data", "WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.csv"), 
-                     skip = 16)
+                     skip = 12) %>% 
+              rename(region = `Region, subregion, country or area *`,
+                     year = `Reference date (as of 1 July)`) %>% 
+              select(-Index, -Variant, -Notes, -`Country code`)
 
 
-leslie <- function(nLx,
-                   nFx, 
-                   n_age_groups=17,
-                   ffab = 0.4886) {
-  L = matrix(0, nrow = n_age_groups, ncol = n_age_groups)
-  L[1,] = ffab * nLx[1]*(nFx[1:n_age_groups]+nFx[2:(n_age_groups+1)]*nLx[2:(n_age_groups+1)]/nLx[1:n_age_groups])/2 # top row 
-  L[1,ncol(L)] <- 0
-  diag(L[2:n_age_groups,1:(n_age_groups-1)]) = nLx[2:n_age_groups] / nLx[1:(n_age_groups-1)] # subdiagonal
-  return(L)
-} # orig_leslie
-
-new_leslie <- function(Lx, Fx, n=17, ffab = 0.4886) {
+Leslie <- function(Lx, Fx, ffab = 0.4886) {
+  n  = length(Lx)
   L  = diag(0, n)
-  Sx = Lx[2:n] / Lx[1:(n-1)] # (n-1) surv elements for subdiagonal
-  L[1,] = ffab * Lx[1]/2*(Fx[1:n]+ Sx[1:n]*Fx[2:(n+1)]) # top row 
+  
+  # (n-1) surv elements for subdiagonal  
+  Sx = Lx[2:n] / Lx[1:(n-1)] 
   diag(L[-1,]) = Sx
+  
+  # (slightly arbitrary) survival prob for 100+ -> 100+
+  # assume mortal rate approx = 0.7, so 5-yr survival is exp(-3.5)
+  # or approx 3%
+  L[n,n] = .03
+  
+  # top row (just fill out for groups 0,5,10,...,45)
+  L[1,1:10] = ffab * Lx[1]/2*(Fx[1:10]+ Sx[1:10]*Fx[2:11]) 
+ 
   return(L)
 }
 
@@ -73,56 +80,49 @@ new_leslie <- function(Lx, Fx, n=17, ffab = 0.4886) {
 function(input, output) {
   
   # Fill in the spot we created for a plot
+  
   output$popPlot <- renderPlot({
+
+  # for the selected country, get Lx, Fx, and Kx (pop) 
+  # for five-yr age groups starting at 0,5,...,95 and 100+
     
     nLx <- dl %>% 
       left_join(df) %>% 
-      filter(year==2010, region == input$region, age<85) %>% 
+      filter(year==2010, region == input$region) %>% 
       pull(Lx) 
-    
-    ## need to fix first age group
-    
-    nLx <- c(sum(nLx[1:2]), nLx[3:length(nLx)])
     
     nFx <- dl %>% 
       left_join(df) %>% 
       filter(year==2010, region == input$region) %>% 
       mutate(Fx = ifelse(is.na(Fx), 0, Fx)) %>% 
       pull(Fx) 
-    
-    nFx <- nFx[-1]
-    
-    A <- leslie(nLx, nFx)
-    
-    Kt <- d_female %>% 
-      rename(region = `Region, subregion, country or area *`,
-             year = `Reference date (as of 1 July)`) %>% 
-      select(-Index, -Variant, -Notes, -`Country code`) %>% 
+
+    Kt <- d_female  %>% 
       filter(region==input$region, year==2010) %>% 
-      gather(age, pop, -region, -year) %>% 
+      gather(age, pop, -region, -year, -Type, -`Parent code`) %>% 
       mutate(age = as.numeric(age)) %>% 
-      filter(age<85) %>% 
       mutate(pop = as.numeric(pop)) %>% 
-      select(pop) %>% 
-      pull()
+      pull(pop)
     
-    
-    age_groups <- seq(0, 80, by = 5)
-    n_age_groups <-  length(age_groups)
+    A <- Leslie(nLx, nFx)
+
+    n = length(Lx)  # number of age groups
+  
     n_projections <- (input$number_proj - 2010)/5
-    initial_pop <- Kt
-    # define population matrix K
-    K <- matrix(0, nrow = n_age_groups, ncol = n_projections+1)
-    K[,1] <- Kt[1:n_age_groups]
     
+    K = matrix(0, nrow=n, ncol=n_projections+1)
+    
+    K[,1] = Kt
+
     # do the projection!
     for(i in 2:(n_projections+1)){
-      K[,i] <- A%*%K[,i-1] 
+      K[,i] <- A %*% K[,i-1] 
     }
     
+    # convert the projection result to a long dataframe
     Kdf <- as_tibble(K)
     colnames(Kdf) <- seq(from = 2010, to = (2010+n_projections*5), by = 5)
-    Kdf <- cbind(age = seq(from = 0, to = 80, by = 5), Kdf)
+    Kdf <- cbind(age = 5*(seq(Kt)-1), Kdf)
     
     # get in long format and then add proportion of population in each age group
     dk <- Kdf %>% 
@@ -137,17 +137,22 @@ function(input, output) {
       summarise(pop = sum(population)) %>% 
       ggplot(aes(year, pop)) + geom_line(lwd = 1.5) + 
       ggtitle("Total population")+
+      labs(title= paste0(input$region, ' Female Population (1000s)')) +
       theme_bw(base_size = 14)+
-      scale_y_continuous(limits=range(0,pop)) +
-      xlim(c(2020, 2200))
+      xlim(c(2020, 2200)) +
+      ylim(range(0,colSums(K)))
     
+  # consolidate into 10-year age groups for plotting  
     p2 <- dk %>% 
-      filter(age %in% seq(0, 80, by = 10)) %>% 
-      mutate(age = factor(age)) %>% 
+      mutate(age10 = factor(10* floor(age/10)) ) %>% 
+      group_by(year, age=age10) %>% 
+      summarize(population = sum(population),
+                proportion = sum(proportion)) %>% 
       ggplot(aes(year, proportion, color = age)) + 
       geom_line(lwd = 1.5) + 
       ggtitle("Proportion by age group")+
       theme_bw(base_size = 14)+
+      labs(color='10-yr age group') +
       xlim(c(2020, 2200))
     
     p1+p2
