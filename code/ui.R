@@ -1,13 +1,16 @@
 library(tidyverse)
 library(here)
-df <- read_csv(here("data", "WPP2017_FERT_F07_AGE_SPECIFIC_FERTILITY.csv"), skip = 12)
 
-df <- df %>% 
+df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
+               , skip = 16) %>% 
+  filter(Type != 'Label/Separator') %>% 
   rename(region = `Region, subregion, country or area *`, period = Period) %>% 
-  select(-Index, -Variant, -Notes, -`Country code`) %>% 
+  select(-Index, -Variant, -Notes, -`Country code`,-`Parent code`, -Type) %>% 
+  rename('15'='15-19', '20'='20-24', '25'='25-29', '30'='30-34',
+         '35'='35-39', '40'='40-44', '45'='45-49') %>% 
   mutate(year = as.numeric(substr(period, 1, 4))) %>% 
   gather(age, Fx, -region, -period, -year) %>% 
-  mutate(age = as.numeric(age), Fx = Fx/1000)
+  mutate(age = as.numeric(age), Fx = as.numeric(Fx)/1000)
 
 regions <- unique(df$region)
 
