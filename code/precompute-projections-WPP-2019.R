@@ -148,6 +148,9 @@ for (y in 2:nsteps) {
   bigProj[, '0', y] = rowSums( bigProj[,,y-1] * bigFmult)
 }
 
+# projected proportions by age
+bigCx = prop.table(bigProj, margin=c(1,3))
+
 # calculate summaries for all populations ----
 # Total fertility rates
 # Net reproduction rates
@@ -166,12 +169,13 @@ bigMACB = apply(bigFx * bigLx, 1,
 bigR = log(bigNRR) / bigMACB
 
 # approx stable age structure (by 5-year groups)
-bigCx = (bigLx * outer( bigR, mid_ages, 
+bigCx_stable = (bigLx * outer( bigR, mid_ages, 
                         function(rr,xx) exp(-rr*xx))) %>% 
-         prop.table(margin=1)
+                prop.table(margin=1)
 
-vars_to_save = c("bigCx", "bigFmult", "bigFx", "bigKx", "bigLx", 
-                 "bigMACB", "bigNRR", "bigProj", "bigR", "bigSx", "bigTFR", "bigWPP")
+vars_to_save = c("bigCx", "bigCx_stable", "bigFmult", "bigFx", "bigKx", "bigLx", 
+                 "bigMACB", "bigNRR", "bigProj", "bigR", "bigSx", "bigTFR", "bigWPP",
+                 "start_year", "final_year", "nsteps", "ngroups")
 
 save(list = vars_to_save, 
      file=here('data','precompute-projections-WPP-2019.Rdata'))

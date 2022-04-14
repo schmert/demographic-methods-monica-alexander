@@ -10,21 +10,21 @@ regions <- sort(regions[regions!=toupper(regions)])
 fluidPage(    
   
   # Give the page a title
-  titlePanel("Population Projections at 2010 vital rates"),
+  titlePanel("Population Projections from 2015, at 2015 vital rates"),
   
   # Generate a row with a sidebar
   sidebarLayout(      
     
     sidebarPanel(
       selectInput("region",label = "Region", choices = regions),
-      sliderInput("number_proj",
+      sliderInput("last_proj_year",
                   "Project to year :",
                   value = 2020,
                   min = 2020,
                   max = 2200, 
                   step = 5,
                   sep = "", animate =
-                    animationOptions(interval = 600, loop = FALSE)),
+                    animationOptions(interval = 400, loop = FALSE)),
       helpText("Choose a region and the year to project population. Press play to see the projection. Data on 2010 populations, mortality, and fertility rates are from the UN Population Division World Population Prospects.")
       
     ),
