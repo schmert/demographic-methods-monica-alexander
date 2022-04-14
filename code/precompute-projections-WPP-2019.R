@@ -1,3 +1,15 @@
+#.................................................................
+# Carl Schmertmann
+# 14 Apr 2022
+# 
+# variant of Monica Alexander's shiny app code for projecting WPP
+# populations forward at constant rates in order to 
+# illustrate stable age structure
+# 
+# in this version we pre-compute all projections for all
+# countries in order to speed up display
+#.................................................................
+
 library(tidyverse)
 library(here)
 library(patchwork)
@@ -161,4 +173,5 @@ bigCx = (bigLx * outer( bigR, mid_ages,
 vars_to_save = c("bigCx", "bigFmult", "bigFx", "bigKx", "bigLx", 
                  "bigMACB", "bigNRR", "bigProj", "bigR", "bigSx", "bigTFR", "bigWPP")
 
-save(list = vars_to_save, file=here('data','precompute-projections-WPP-2019.Rdata'))
+save(list = vars_to_save, 
+     file=here('data','precompute-projections-WPP-2019.Rdata'))
