@@ -17,6 +17,15 @@ df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
   gather(age, Fx, -region, -period, -year) %>% 
   mutate(age = as.numeric(age), Fx = as.numeric(Fx)/1000)
 
+# convert to an array of latest( 2015-2020) fertility rates
+
+bigFx = df %>% 
+         filter( year==2015 ) %>% 
+         pull(Fx) %>% 
+         matrix(., nrow=length(unique(df$region)))
+         
+dimnames(bigFx) = list( unique(df$region), unique(df$age))
+
 # read abridge life table file ----
 
 #dl <- read_csv(here("data", "WPP2017_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv"), skip = 16)
@@ -43,8 +52,21 @@ dl <- read_csv(here("data", "WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv")
   mutate(year = as.numeric(substr(period, 1, 4)), Lx = Lx/1e5) %>% 
       left_join(age_crosswalk) %>% 
       group_by(region, period, age = age5, year) %>% 
-      summarize( Lx = sum(Lx))
+      summarize( Lx = sum(Lx)) %>% 
+      filter(is.finite(Lx))
 
+
+# convert to an array of latest( 2015-2020) Lx values
+
+bigLx = dl %>% 
+  filter( year==2015 ) %>% 
+  pull(Lx) %>% 
+  matrix(., nrow=length(unique(dl$age))) %>% 
+  t()
+
+dimnames(bigLx) = list(  unique(dl$region), unique(dl$age) )
+
+@@WORKING HERE@@
 
 # read female population file ----
 d_female <- read_csv(here("data", "WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.csv"), 
@@ -63,7 +85,7 @@ Leslie <- function(Lx, Fx, ffab = 0.4886) {
   diag(L[-1,]) = Sx
   
   # (slightly arbitrary) survival prob for 100+ -> 100+
-  # assume mortal rate approx = 0.7, so 5-yr survival is exp(-3.5)
+  # assume 100+ mortal rate approx = 0.7, so 5-yr survival is exp(-3.5)
   # or approx 3%
   L[n,n] = .03
   
@@ -137,24 +159,39 @@ function(input, output) {
       summarise(pop = sum(population)) %>% 
       ggplot(aes(year, pop)) + geom_line(lwd = 1.5) + 
       ggtitle("Total population")+
-      labs(title= paste0(input$region, ' Female Population (1000s)')) +
+      labs(title= input$region, 
+           subtitle='Female Population (1000s)') +
       theme_bw(base_size = 14)+
       xlim(c(2020, 2200)) +
       ylim(range(0,colSums(K)))
     
   # consolidate into 10-year age groups for plotting  
-    p2 <- dk %>% 
+  
+    dk10 <- dk %>% 
       mutate(age10 = factor(10* floor(age/10)) ) %>% 
       group_by(year, age=age10) %>% 
       summarize(population = sum(population),
                 proportion = sum(proportion)) %>% 
-      ggplot(aes(year, proportion, color = age)) + 
-      geom_line(lwd = 1.5) + 
-      ggtitle("Proportion by age group")+
-      theme_bw(base_size = 14)+
-      labs(color='10-yr age group') +
-      xlim(c(2020, 2200))
+      ungroup() 
+      
     
+    age_text = dk10 %>% 
+                filter(year == max(year)) %>% 
+                mutate(age = as.character(age)) %>% 
+                select(year, age, proportion)
+    
+    p2 <- ggplot(data=dk10, aes(year, proportion, color = age)) + 
+            geom_line(lwd = 1.5) + 
+            ggtitle("Proportion by age group")+
+            theme_bw(base_size = 14)+
+            labs(color='10-yr\nage group') +
+            guides(label='none') +
+            scale_color_viridis_d(option='A') +
+            xlim(c(2020, 2200)) +
+            geom_text(data=age_text, 
+                      aes(x=year+3, y= proportion, label=age),
+                      size=3)
+
     p1+p2
     
   })
