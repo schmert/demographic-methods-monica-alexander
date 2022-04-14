@@ -27,8 +27,23 @@ function(input, output) {
   output$popPlot <- renderPlot({
 
     # convert the selected projection result to a long dataframe
+
+    Kdf = Kdf_shell %>% 
+      add_column(Kx = as.vector( bigProj[input$region, , ]),
+                 Cx = as.vector(   bigCx[input$region,,]) ) 
     
+    # consolidate into 10-year age groups for plotting  
+    
+    Kdf10 <- Kdf %>% 
+      mutate(age10 = factor(10* floor(age/10)) ) %>% 
+      group_by(year, age=age10) %>% 
+      summarize(Cx = sum(Cx), Kx=sum(Kx)) %>% 
+      ungroup() 
+
+    max_Kx = max(Kdf10$Kx)
     maxpop = max(colSums(bigProj[input$region,,]) )
+    
+    Kdf10 = filter(Kdf10, year <= input$last_proj_year)
     
     this_TFR = bigTFR[input$region]
     this_r   = bigR[input$region]
@@ -36,12 +51,8 @@ function(input, output) {
     this_subtitle = paste0('TFR in 2015 = ', sprintf('%3.2f',this_TFR),
                            '\nLR growth rate = ', sprintf('%5.4f', this_r))
       
-    Kdf = Kdf_shell %>% 
-            add_column(Kx = as.vector( bigProj[input$region, , ]),
-                       Cx = as.vector(   bigCx[input$region,,]) ) %>% 
-          filter( year <= input$last_proj_year)
-    
-    Kdf_total = Kdf %>% 
+
+    Kdf_total = Kdf10 %>% 
                   group_by(year) %>% 
                   summarize(pop = sum(Kx))
 
@@ -54,36 +65,46 @@ function(input, output) {
             xlim(c(2020, 2205)) +
             ylim(range(0,maxpop))
     
-  # consolidate into 10-year age groups for plotting  
-  
-    Kdf10 <- Kdf %>% 
-      mutate(age10 = factor(10* floor(age/10)) ) %>% 
-      group_by(year, age=age10) %>% 
-      summarize(Cx = sum(Cx)) %>% 
-      ungroup() 
-      
     
     age_text = Kdf10 %>% 
                 filter(year == max(year)) %>% 
                 mutate(age = as.character(age)) %>% 
                 select(year, age, Cx)
     
-    p2 <- ggplot(data=Kdf10) +
-            aes(year, Cx, color = age) + 
-            geom_line(lwd = 1.5) + 
+    if (input$pyramid_style) {
+      
+    group_lab = paste0(seq(0,100,10),'-', seq(9,109,10), sep='')
+    group_lab[11] = '100+'
+                       
+    p2 <- ggplot(data=filter(Kdf10, year==input$last_proj_year)) +
+            aes(year, x= age, y=Kx) + 
+            geom_bar(stat='identity', fill='royalblue', width=.80) + 
             theme_bw(base_size = 14)+
-            labs(title="Proportion by 10-year Age Group",
+            labs(title="Population Size By 10-Yr Age Group",
                 x='Year',
-                y='Fraction of Population',
-                color='10-yr\nage group') +
-            guides(color='none',label='none') +
-#            scale_color_viridis_d(option='A') +
-scale_color_manual(values=rainbow(11)) +
-            xlim(c(2020, 2205)) +
-            geom_text(data=age_text, 
-                      aes(x=year+3, y=Cx, label=age),
-                      size=3)
-
+                y='# Women (000s)',
+                caption= paste(max_Kx)) +
+            scale_y_continuous(limits=range(0,max_Kx)) +
+            scale_x_discrete(breaks=seq(0,100,10), labels = group_lab)
+    
+    } else {
+    
+      p2 <- ggplot(data=Kdf10) +
+      aes(year, Cx, color = age) + 
+      geom_line(lwd = 1.5) + 
+      theme_bw(base_size = 14)+
+      labs(title="Proportion by 10-year Age Group",
+           x='Year',
+           y='Fraction of Population',
+           color='10-yr\nage group') +
+      guides(color='none',label='none') +
+      scale_color_manual(values=rainbow(ngroups)) +
+      xlim(c(2020, 2205)) +
+      geom_text(data=age_text, 
+                aes(x=year+3, y=Cx, label=age),
+                size=3)
+    }
+    
     p1+p2
     
   })

@@ -1,10 +1,10 @@
 library(tidyverse)
 library(here)
+library(patchwork)
 
-regions <- unique(df$region)
+regions <- unique(bigWPP$region)
 
 regions <- sort(regions[regions!=toupper(regions)])
-
 
 # Use a fluid Bootstrap layout
 fluidPage(    
@@ -25,6 +25,11 @@ fluidPage(
                   step = 5,
                   sep = "", animate =
                     animationOptions(interval = 400, loop = FALSE)),
+      
+      checkboxInput(inputId = 'pyramid_style', 
+                    label   = 'Right-hand Plot Pyramid Style?',
+                    value   = FALSE),
+      
       helpText("Choose a region and the year to project population. Press play to see the projection. Data on 2010 populations, mortality, and fertility rates are from the UN Population Division World Population Prospects.")
       
     ),
