@@ -134,7 +134,10 @@ ui = fluidPage(
          "<br/>",
          "adapted from code by Prof. Monica Alexander, Univ. of Toronto",
          "<br/>",
-         "<small><a href=\"https://github.com/MJAlexander/demographic-methods\" target=\"_blank\">Monica's original code on Github</a></small>")
+         "<small>Github: ",
+         "<a href=\"https://github.com/MJAlexander/demographic-methods\" target=\"_blank\">Monica's original code</a></small>",
+         "&nbsp;&nbsp;&nbsp;&nbsp;",
+         "<small><a href=\"https://github.com/schmert/demographic-methods-monica-alexander/tree/master/stable%20pop%20shiny\" target=\"_blank\">Modified code</a></small>")
   ),
   
   # Generate a row with a sidebar
