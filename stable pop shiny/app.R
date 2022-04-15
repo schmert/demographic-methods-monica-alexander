@@ -44,6 +44,7 @@ server = function(input, output) {
       ungroup() 
 
     max_Kx = max(Kdf10$Kx)
+    max_Cx = max(Kdf10$Cx)
     maxpop = max(colSums(bigProj[input$region,,]) )
     
     Kdf10 = filter(Kdf10, year <= input$last_proj_year)
@@ -106,6 +107,7 @@ server = function(input, output) {
            color='10-yr\nage group') +
       guides(color='none',label='none') +
       scale_color_manual(values=rainbow(ngroups)) +
+      scale_y_continuous(limits=range(0,max_Cx)) +
       xlim(c(2020, 2180)) +
       geom_text(data=age_text, 
                 aes(x=year+3, y=Cx, label=age),
