@@ -27,10 +27,14 @@ fluidPage(
                     animationOptions(interval = 400, loop = FALSE)),
       
       checkboxInput(inputId = 'pyramid_style', 
-                    label   = 'Right-hand Plot Pyramid Style?',
+                    label   = 'Right-hand Plot as Population Bars?',
                     value   = FALSE),
       
-      helpText("Choose a region and the year to project population. Press play to see the projection. Data on 2010 populations, mortality, and fertility rates are from the UN Population Division World Population Prospects.")
+      checkboxInput(inputId = 'flip_bars', 
+                    label   = 'Rotate Bar Plot, Pyramid style?',
+                    value   = FALSE),
+      
+      helpText("Choose a region and a projection year. Press play to see the projection. Data on 2015 populations, mortality, and fertility rates are from the UN Population Division World Population Prospects 2019.")
       
     ),
     

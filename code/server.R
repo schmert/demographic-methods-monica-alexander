@@ -81,11 +81,14 @@ function(input, output) {
             geom_bar(stat='identity', fill='royalblue', width=.80) + 
             theme_bw(base_size = 14)+
             labs(title="Population Size By 10-Yr Age Group",
-                x='Year',
+                subtitle = input$last_proj_year, 
+                x='Age Group',
                 y='# Women (000s)',
                 caption= paste(max_Kx)) +
             scale_y_continuous(limits=range(0,max_Kx)) +
             scale_x_discrete(breaks=seq(0,100,10), labels = group_lab)
+    
+    if (input$flip_bars) p2 = p2 + coord_flip()
     
     } else {
     
@@ -94,6 +97,7 @@ function(input, output) {
       geom_line(lwd = 1.5) + 
       theme_bw(base_size = 14)+
       labs(title="Proportion by 10-year Age Group",
+           subtitle = input$last_proj_year, 
            x='Year',
            y='Fraction of Population',
            color='10-yr\nage group') +
