@@ -5,6 +5,11 @@ library(patchwork)
 # Use a fluid Bootstrap layout
 fluidPage(    
   
+  theme = bslib::bs_theme(
+    bootswatch = "pulse", 
+    base_font = bslib::font_google('Sarabun') 
+  ),
+  
   # Give the page a title
   titlePanel("Population Projections from 2015, at 2015 vital rates"),
   
