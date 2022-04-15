@@ -70,7 +70,7 @@ function(input, output) {
                 mutate(age = as.character(age)) %>% 
                 select(year, age, Cx)
     
-    if (input$pyramid_style) {
+    if (input$rhs_barplot) {
       
     group_lab = paste0(seq(0,100,10),'-', seq(9,109,10), sep='')
     group_lab[11] = '100+'
@@ -87,6 +87,8 @@ function(input, output) {
             scale_y_continuous(limits=range(0,max_Kx)) +
             scale_x_discrete(breaks=seq(0,100,10), labels = group_lab)
     
+    if (input$rhs_rotate) p2 = p2 + coord_flip()
+    
     } else {
     
       p2 <- ggplot(data=Kdf10) +
@@ -94,6 +96,7 @@ function(input, output) {
       geom_line(lwd = 1.5) + 
       theme_bw(base_size = 14)+
       labs(title="Proportion by 10-year Age Group",
+           subtitle= input$last_proj_year,
            x='Year',
            y='Fraction of Population',
            color='10-yr\nage group') +

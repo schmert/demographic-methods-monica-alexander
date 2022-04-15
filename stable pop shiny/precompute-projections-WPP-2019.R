@@ -34,14 +34,14 @@ dl <- read_csv("WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv",
          Lx = `Number of person-years lived L(x,n)`,
          age = `Age (x)`,
          period = Period) %>% 
-  select(region, period, age, Lx) %>% 
+  select(Type,region, period, age, Lx) %>% 
   mutate(year = as.numeric(substr(period, 1, 4)), Lx = Lx/1e5) %>% 
   filter(year == start_year) %>% 
   left_join(age_crosswalk) %>% 
-  group_by(region, period, age = age5, year) %>% 
+  group_by(Type,region, period, age = age5, year) %>% 
   summarize( Lx = sum(Lx)) %>% 
   filter(is.finite(Lx)) %>% 
-  pivot_wider(id_cols=c('region','period','year'), 
+  pivot_wider(id_cols=c('Type','region','period','year'), 
               values_from = 'Lx', 
               names_prefix = 'Lx',
               names_from='age')
@@ -52,14 +52,14 @@ dl <- read_csv("WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv",
 df <- read_csv("WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv", skip = 16) %>% 
   filter(Type != 'Label/Separator') %>% 
   rename(region = `Region, subregion, country or area *`, period = Period) %>% 
-  select(-Index, -Variant, -Notes, -`Country code`,-`Parent code`, -Type) %>% 
+  select(-Index, -Variant, -Notes, -`Country code`,-`Parent code`) %>% 
   rename('15'='15-19', '20'='20-24', '25'='25-29', '30'='30-34',
          '35'='35-39', '40'='40-44', '45'='45-49') %>% 
   mutate(year = as.numeric(substr(period, 1, 4))) %>% 
   filter(year==start_year) %>% 
-  gather(age, Fx, -region, -period, -year) %>% 
+  gather(age, Fx, -region, -period, -year, -Type) %>% 
   mutate(age = as.numeric(age), Fx = as.numeric(Fx)/1000) %>% 
-  pivot_wider(id_cols=c('region','period','year'), 
+  pivot_wider(id_cols=c('Type','region','period','year'), 
               values_from = 'Fx', 
               names_prefix = 'Fx',
               names_from='age')
@@ -72,9 +72,9 @@ d_female <- read_csv("WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.csv",
               rename(region = `Region, subregion, country or area *`,
                      year = `Reference date (as of 1 July)`) %>% 
               filter(year == start_year, Type != 'Label/Separator') %>% 
-              select(region, year, `0`:`100`) %>% 
+              select(Type,region, year, `0`:`100`) %>% 
               mutate(across(`0`:`100`, as.numeric)) %>% 
-              rename_with( ~ paste0('Kx',.), -c('region','year'))
+              rename_with( ~ paste0('Kx',.), -c('region','year','Type'))
 
 # join the files to make sure that all the region names are 
 # properly matched
@@ -89,6 +89,7 @@ bigWPP = df %>%
 bigLx = bigWPP %>% 
          select(starts_with('Lx')) %>% 
          as.matrix()
+
 
 dimnames(bigLx) = list( bigWPP$region, paste(seq(0,100,5)) )
 
@@ -171,8 +172,21 @@ bigCx_stable = (bigLx * outer( bigR, mid_ages,
                         function(rr,xx) exp(-rr*xx))) %>% 
                 prop.table(margin=1)
 
+
+# create a list of selection options in a custom order:
+# sorted alphabetically within (World, Region, Subregion, Country/Area) types
+keepers = c('World','Region','Subregion','Country/Area')
+
+regions = bigWPP %>% 
+            filter(Type %in% keepers) %>% 
+            mutate(categ = factor(Type, levels=keepers)) %>% 
+            group_by(categ, region) %>% 
+            slice(1) %>% 
+            pull(region)
+
+
 vars_to_save = c("bigCx", "bigCx_stable", "bigFmult", "bigFx", "bigKx", "bigLx", 
                  "bigMACB", "bigNRR", "bigProj", "bigR", "bigSx", "bigTFR", "bigWPP",
-                 "start_year", "final_year", "nsteps", "ngroups")
+                 "start_year", "final_year", "nsteps", "ngroups", "regions")
 
 save(list = vars_to_save, file='precompute-projections-WPP-2019.Rdata')
