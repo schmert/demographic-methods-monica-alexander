@@ -9,6 +9,9 @@
 library(tidyverse)
 library(patchwork)
 
+options(warn = -1)  # turn off warnings
+options(dplyr.summarise.inform = FALSE) # turn off tidyverse messages
+
 precomputed = "precompute-projections-WPP-2019.Rdata"
 load( precomputed )
 
@@ -18,7 +21,8 @@ ages  = as.numeric( dimnames(bigProj)[[2]] )
 Kdf_shell = expand.grid( age= ages, year = years) %>% 
              as_tibble()
 
-# Define a server for the Shiny app
+# Define a server for the Shiny app ----
+
 server = function(input, output) {
   
   # Fill in the spot we created for a plot
@@ -61,7 +65,7 @@ server = function(input, output) {
                  title= paste(input$region,'Female Population (1000s)'),
                  subtitle = this_subtitle) +
             theme_bw(base_size = 14)+
-            xlim(c(2020, 2205)) +
+            xlim(c(2020, 2180)) +
             ylim(range(0,maxpop))
     
     
@@ -102,7 +106,7 @@ server = function(input, output) {
            color='10-yr\nage group') +
       guides(color='none',label='none') +
       scale_color_manual(values=rainbow(ngroups)) +
-      xlim(c(2020, 2205)) +
+      xlim(c(2020, 2180)) +
       geom_text(data=age_text, 
                 aes(x=year+3, y=Cx, label=age),
                 size=3, face='bold')
@@ -117,10 +121,10 @@ server = function(input, output) {
 
 ui = fluidPage(    
     
-    theme = bslib::bs_theme(
-      bootswatch = "pulse", 
-      base_font = bslib::font_google('Sarabun') 
-    ),
+   theme = bslib::bs_theme(
+     bootswatch = "pulse",
+     base_font = bslib::font_google('Sarabun')
+   ),
     
     # Give the page a title
     titlePanel("Population Projections from 2015, at 2015 vital rates"),
@@ -134,7 +138,7 @@ ui = fluidPage(
                     "Project to year :",
                     value = 2015,
                     min = 2015,
-                    max = 2200, 
+                    max = 2175, 
                     step = 5,
                     sep = "", animate =
                       animationOptions(interval = 400, loop = FALSE)),

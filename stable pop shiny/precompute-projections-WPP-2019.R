@@ -14,7 +14,7 @@ library(tidyverse)
 library(patchwork)
 
 start_year = 2015
-final_year = 2200
+final_year = 2175
 nsteps     = 1 +(final_year - start_year)/5
 
 # read WPP 2019 abridged life table file ----
