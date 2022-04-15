@@ -7,11 +7,10 @@
 # (which she amazingly created in about 30 minutes, two days ago!)
 #...................................................................
 library(tidyverse)
-library(here)
 library(patchwork)
 
-precomputed = here("data", "precompute-projections-WPP-2019.Rdata")
-load( precomputed)
+precomputed = "precompute-projections-WPP-2019.Rdata"
+load( precomputed )
 
 years = as.numeric( dimnames(bigProj)[[3]] )
 ages  = as.numeric( dimnames(bigProj)[[2]] )
@@ -80,10 +79,11 @@ function(input, output) {
             aes(year, x= age, y=Kx) + 
             geom_bar(stat='identity', fill='royalblue', width=.80) + 
             theme_bw(base_size = 14)+
+            theme(axis.text.x = element_text(size=10)) +
             labs(title="Population Size By 10-Yr Age Group",
-                x='Year',
-                y='# Women (000s)',
-                caption= paste(max_Kx)) +
+                 subtitle= input$last_proj_year,
+                x='Age Group',
+                y='# Women (000s)') +
             scale_y_continuous(limits=range(0,max_Kx)) +
             scale_x_discrete(breaks=seq(0,100,10), labels = group_lab)
     
@@ -102,7 +102,7 @@ function(input, output) {
       xlim(c(2020, 2205)) +
       geom_text(data=age_text, 
                 aes(x=year+3, y=Cx, label=age),
-                size=3)
+                size=3, face='bold')
     }
     
     p1+p2

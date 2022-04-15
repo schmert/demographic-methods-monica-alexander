@@ -11,7 +11,6 @@
 #.................................................................
 
 library(tidyverse)
-library(here)
 library(patchwork)
 
 start_year = 2015
@@ -29,7 +28,7 @@ age_crosswalk = tibble(
   age5 = 5*floor(age/5) 
 )
 
-dl <- read_csv(here("data", "WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv"), 
+dl <- read_csv("WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv", 
                skip = 12) %>% 
   rename(region = `Region, subregion, country or area *`,
          Lx = `Number of person-years lived L(x,n)`,
@@ -50,8 +49,7 @@ dl <- read_csv(here("data", "WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.csv")
 
 # read WPP 2019 ASFR file ----
 
-df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
-          , skip = 16) %>% 
+df <- read_csv("WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv", skip = 16) %>% 
   filter(Type != 'Label/Separator') %>% 
   rename(region = `Region, subregion, country or area *`, period = Period) %>% 
   select(-Index, -Variant, -Notes, -`Country code`,-`Parent code`, -Type) %>% 
@@ -69,7 +67,7 @@ df <- read_csv(here("data", "WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.csv")
 
 # read WPP 2019 female population file ----
 
-d_female <- read_csv(here("data", "WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.csv"), 
+d_female <- read_csv("WPP2019_POP_F15_3_ANNUAL_POPULATION_BY_AGE_FEMALE.csv", 
                      skip = 12) %>% 
               rename(region = `Region, subregion, country or area *`,
                      year = `Reference date (as of 1 July)`) %>% 
@@ -177,5 +175,4 @@ vars_to_save = c("bigCx", "bigCx_stable", "bigFmult", "bigFx", "bigKx", "bigLx",
                  "bigMACB", "bigNRR", "bigProj", "bigR", "bigSx", "bigTFR", "bigWPP",
                  "start_year", "final_year", "nsteps", "ngroups")
 
-save(list = vars_to_save, 
-     file=here('data','precompute-projections-WPP-2019.Rdata'))
+save(list = vars_to_save, file='precompute-projections-WPP-2019.Rdata')

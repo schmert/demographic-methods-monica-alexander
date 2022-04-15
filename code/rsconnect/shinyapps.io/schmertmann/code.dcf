@@ -1,0 +1,11 @@
+name: code
+title:
+username:
+account: schmertmann
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6094371
+bundleId: 5800040
+url: https://schmertmann.shinyapps.io/code/
+when: 1649970639.65003
+lastSyncTime: 1649970639.65003
