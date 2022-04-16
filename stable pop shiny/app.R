@@ -53,7 +53,8 @@ server = function(input, output) {
     this_r   = bigR[input$region]
     
     this_subtitle = paste0('TFR in 2015 = ', sprintf('%3.2f',this_TFR),
-                           '\nLR growth rate = ', sprintf('%5.4f', this_r))
+                           '\nLR growth rate = ', 
+                           sprintf('%+5.4f', this_r))
     
     
     Kdf_total = Kdf10 %>% 
@@ -63,7 +64,7 @@ server = function(input, output) {
     p1 <-  Kdf_total %>% 
       ggplot(aes(year, pop)) + geom_line(lwd = 1.5) + 
       labs(x="Year",y='Population (000s)',
-           title= paste(input$region,'Female Population (1000s)'),
+           title= paste(input$region,'Female Popn (1000s)'),
            subtitle = this_subtitle) +
       theme_bw(base_size = 14)+
       xlim(c(2020, 2180)) +
@@ -130,7 +131,7 @@ ui = fluidPage(
   
   # Give the page a title
   titlePanel(
-    HTML("Population Projections from 2015, at 2015 vital rates",
+    HTML("Population Projections from 2015, at 2015-2020 vital rates",
          "<br/>",
          "adapted from code by Prof. Monica Alexander, Univ. of Toronto",
          "<br/>",
@@ -164,7 +165,7 @@ ui = fluidPage(
                                value   = FALSE))
       ),
       
-      helpText("Choose a region and a projection year. Press play to see the projection. Data on 2015 populations, mortality, and fertility rates are from the UN Population Division World Population Prospects 2019.")
+      helpText("Choose a region and a projection year. Press play to see the projection. 2015 populations, 2015-2020 mortality and fertility rates are from the UN Population Division, World Population Prospects 2019.")
       
     ),
     
